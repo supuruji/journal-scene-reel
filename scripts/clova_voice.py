@@ -57,6 +57,12 @@ FIXED = {
     "closing":  "전 열일곱 편. 중국어 한국어 영어로 온라인 공개됩니다. 주간 이홍군. 2026년 6월 30일.",
     "nth": lambda n: f"{n}번. ",
   },
+  "en": {
+    "title":    "East Asian Religions and Cultures. Volume three, issue two. June 2026. Published by the Daesoon Academy of Sciences, Daejin University.",
+    "overview": "This issue presents seventeen research articles with a cross-civilizational, cross-textual and cross-disciplinary character.",
+    "closing":  "All seventeen papers, published online in Chinese, Korean and English. Editor-in-chief, Li Hongjun. June thirtieth, 2026.",
+    "nth": lambda n: f"No. {n}. ",
+  },
 }
 
 def extract_narration(html, lang):
@@ -71,6 +77,11 @@ def extract_narration(html, lang):
     for e in entries:
         nmatch = re.match(r"\s*(\d+)", e)
         n = nmatch.group(1) if nmatch else "?"
+        if lang == "en":
+            en_t = re.search(r'\ben\s*:\s*"([^"]*)"', e)
+            title_v = en_t.group(1) if en_t else ""
+            scenes.append(clean(f["nth"](n) + title_v + "."))
+            continue
         vals = re.findall(lang + r'\s*:\s*"([^"]*)"', e)   # 순서: tag, who, t, s
         if len(vals) < 4:
             sys.exit(f"ERROR: 논문 {n} 블록에서 {lang} 필드 4개를 못 찾음 (found {len(vals)}).")
@@ -95,11 +106,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--html", required=True)
     ap.add_argument("--keyfile", default="")
-    ap.add_argument("--lang", default="zh", choices=["zh", "ko"])
-    ap.add_argument("--speaker", default="meimei")
+    ap.add_argument("--lang", default="zh", choices=["zh", "ko", "en"])
+    ap.add_argument("--speaker", default="")
     ap.add_argument("--speed", default="0")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
+    if not a.speaker:
+        a.speaker = {"ko": "nara", "zh": "meimei", "en": "matt"}.get(a.lang, "meimei")
 
     cid, csec = read_keys(a.keyfile)
     html = open(a.html, encoding="utf-8").read()
@@ -116,7 +129,7 @@ def main():
         audio[str(i)] = "data:audio/mp3;base64," + base64.b64encode(mp3).decode("ascii")
         print(f"  [{i:02d}] {len(mp3)//1024}KB  {txt[:28]}...")
 
-    varname = "__KO_AUDIO" if a.lang == "ko" else "__ZH_AUDIO"
+    varname = {"ko": "__KO_AUDIO", "en": "__EN_AUDIO"}.get(a.lang, "__ZH_AUDIO")
     with open(a.out, "w", encoding="utf-8") as f:
         f.write("window." + varname + " = " + json.dumps(audio, ensure_ascii=True) + ";\n")
     total = sum(len(v) for v in audio.values()) // 1024
