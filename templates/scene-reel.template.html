@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>JEARC 3·2 소개 도해</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Noto+Serif+KR:wght@500;600;900&family=Noto+Serif+SC:wght@500;600;900&display=swap">
+<style>
+/* Layout: cinematic 16:9 stage, auto-advancing scene reel; large index seal + serif title stack, teal rule, one-line thesis. Committed dark (scholarly). */
+:root{
+  color-scheme: dark;
+  --bg:#070f11; --panel:#0b1618; --frame:#000;
+  --fg:#eef3f1; --muted:#9db1ad; --faint:#64807c;
+  --accent:#12b6c8; --accent-deep:#0a7e8c; --accent-soft:rgba(18,182,200,.14);
+  --gold:#c7a867; --gold-soft:rgba(199,168,103,.14);
+  --line:rgba(255,255,255,.12);
+  --font-latin:"Cormorant Garamond","Noto Serif KR",Georgia,serif;
+  --font-ko:"Noto Serif KR",serif;
+  --font-zh:"Noto Serif SC",serif;
+  --font-cjk:var(--font-ko);
+  --font-ui:system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+.lang-ko{--font-cjk:var(--font-ko)}
+.lang-zh{--font-cjk:var(--font-zh)}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font-ui);
+  min-height:100%;display:flex;flex-direction:column;align-items:center;}
+#player{width:100%;max-width:1400px;padding:18px 16px 28px;display:flex;flex-direction:column;gap:14px}
+
+/* ---- stage ---- */
+#stagewrap{position:relative;width:100%;aspect-ratio:16/9;background:var(--frame);
+  border-radius:10px;overflow:hidden;box-shadow:0 24px 70px -30px #000,0 0 0 1px var(--line);
+  display:grid;place-items:center}
+#stage{position:relative;width:100%;height:100%;container-type:size;overflow:hidden;
+  background:
+    radial-gradient(120% 90% at 85% 12%, rgba(18,182,200,.10), transparent 55%),
+    radial-gradient(90% 80% at 8% 92%, rgba(199,168,103,.08), transparent 55%),
+    linear-gradient(160deg,#0a1517 0%,#070f11 55%,#060b0d 100%);}
+#stagewrap:fullscreen{width:100vw;height:100vh;border-radius:0;background:#000}
+#stagewrap:fullscreen #stage{height:100%;width:auto;aspect-ratio:16/9;max-width:100vw;max-height:100vh}
+
+/* subtle grid texture + vignette */
+#stage::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0 1px,transparent 1px 46px);
+  mask:radial-gradient(130% 110% at 50% 40%,#000 55%,transparent 100%)}
+#stage::after{content:"";position:absolute;inset:0;pointer-events:none;
+  box-shadow:inset 0 0 18cqw 4cqw rgba(0,0,0,.55)}
+
+/* progress + meta rails inside stage */
+#bar{position:absolute;left:0;top:0;height:.5cqh;background:var(--accent);width:0;z-index:6;
+  box-shadow:0 0 12px var(--accent)}
+#brand{position:absolute;top:4.2cqh;left:5cqw;z-index:5;display:flex;align-items:center;gap:1.2cqw;
+  font-family:var(--font-latin);letter-spacing:.14em;color:var(--muted);font-size:1.5cqw;text-transform:uppercase}
+#brand .dot{width:.8cqw;height:.8cqw;border-radius:50%;background:var(--accent)}
+#brand b{color:var(--fg);font-weight:600}
+#counter{position:absolute;top:4.2cqh;right:5cqw;z-index:5;font-family:var(--font-latin);
+  color:var(--faint);font-size:1.5cqw;letter-spacing:.12em}
+#counter b{color:var(--gold)}
+
+/* ---- scene base ---- */
+.scene{position:absolute;inset:0;display:none;padding:12cqh 5.5cqw 8cqh}
+.scene.active{display:block}
+.rise{opacity:0;transform:translateY(2.2cqh)}
+.scene.run .rise{opacity:1;transform:none;transition:opacity .9s ease,transform .9s cubic-bezier(.2,.75,.2,1);transition-delay:var(--d,0s)}
+.draw{transform:scaleX(0);transform-origin:left}
+.scene.run .draw{transform:scaleX(1);transition:transform 1s cubic-bezier(.6,0,.2,1);transition-delay:var(--d,0s)}
+@media (prefers-reduced-motion:reduce){
+  .rise,.scene.run .rise{opacity:1;transform:none;transition:none}
+  .draw,.scene.run .draw{transform:none;transition:none}
+}
+/* shot mode: 프레임 캡처용 — 애니메이션 없이 최종 상태 고정 */
+.shot .rise{opacity:1!important;transform:none!important;transition:none!important}
+.shot .draw{transform:none!important;transition:none!important}
+/* shot mode: 스테이지가 뷰포트(1920×1080)를 꽉 채우도록 */
+body.shotmode{overflow:hidden}
+body.shotmode #player{max-width:none!important;padding:0!important;margin:0!important;gap:0!important}
+body.shotmode #controls,body.shotmode .hint{display:none!important}
+body.shotmode #stagewrap{width:100vw!important;height:100vh!important;border-radius:0!important;aspect-ratio:auto!important;box-shadow:none!important}
+
+/* watermark index seal */
+.seal{position:absolute;right:4cqw;bottom:5cqh;font-family:var(--font-latin);font-weight:600;
+  font-size:46cqh;line-height:.8;color:transparent;-webkit-text-stroke:.18cqw var(--gold-soft);
+  z-index:1;user-select:none;letter-spacing:-.02em}
+
+/* paper scene content */
+.eyebrow{display:inline-flex;align-items:center;gap:1cqw;font-family:var(--font-cjk);
+  font-size:1.9cqw;letter-spacing:.06em;color:var(--accent);margin-bottom:2.4cqh}
+.eyebrow .num{font-family:var(--font-latin);font-weight:600;color:var(--gold);font-size:2.1cqw}
+.eyebrow .bar{width:3cqw;height:1px;background:var(--accent)}
+.en-title{font-family:var(--font-latin);font-style:italic;font-weight:500;color:var(--muted);
+  font-size:2.2cqw;line-height:1.25;max-width:72cqw;margin-bottom:1.4cqh;text-wrap:balance}
+.title{position:relative;z-index:2;font-family:var(--font-cjk);font-weight:900;color:var(--fg);
+  font-size:4.6cqw;line-height:1.22;max-width:78cqw;text-wrap:balance;margin:0}
+.rule{height:.34cqh;width:14cqw;background:linear-gradient(90deg,var(--accent),transparent);
+  margin:3cqh 0 3cqh;border-radius:2px}
+.thesis{position:relative;z-index:2;font-family:var(--font-cjk);font-weight:500;color:#d4e0dd;
+  font-size:2.35cqw;line-height:1.72;max-width:70cqw}
+.byline{position:absolute;left:5.5cqw;bottom:6.5cqh;z-index:2;display:flex;align-items:baseline;gap:1.6cqw;
+  font-family:var(--font-cjk)}
+.byline .who{font-size:2.3cqw;font-weight:600;color:var(--fg)}
+.byline .lat{font-family:var(--font-latin);font-size:1.9cqw;color:var(--accent);letter-spacing:.04em}
+.byline .aff{font-family:var(--font-latin);font-size:1.7cqw;font-style:italic;color:var(--faint)}
+
+/* title / overview / closing scenes */
+.center{display:flex;flex-direction:column;justify-content:center;height:100%;padding:0 9cqw;text-align:center;align-items:center}
+.center.left{text-align:left;align-items:flex-start;padding:0 7cqw}
+.kicker{font-family:var(--font-latin);text-transform:uppercase;letter-spacing:.42em;
+  color:var(--accent);font-size:1.7cqw;margin-bottom:3cqh}
+.big{font-family:var(--font-latin);font-weight:600;color:var(--fg);font-size:7.2cqw;line-height:1.02;
+  margin:0;text-wrap:balance}
+.big .amp{color:var(--gold)}
+.sub-cjk{font-family:var(--font-cjk);font-weight:600;color:var(--fg);font-size:3.4cqw;margin:2.6cqh 0 0}
+.vol{font-family:var(--font-latin);font-size:2.4cqw;color:var(--muted);letter-spacing:.14em;margin-top:3.4cqh}
+.vol b{color:var(--gold);font-weight:600}
+.pub{font-family:var(--font-cjk);font-size:1.9cqw;color:var(--faint);margin-top:4.4cqh;letter-spacing:.04em}
+.lead{font-family:var(--font-cjk);font-weight:500;color:#d7e2df;font-size:2.7cqw;line-height:1.7;
+  max-width:78cqw;margin:0 auto}
+.count-hero{font-family:var(--font-latin);font-weight:600;color:var(--gold);font-size:12cqw;line-height:1}
+.count-label{font-family:var(--font-cjk);color:var(--muted);font-size:2.2cqw;letter-spacing:.1em;margin-top:-1cqh}
+.sign{font-family:var(--font-cjk);color:var(--muted);font-size:2cqw;margin-top:4cqh;line-height:1.7}
+.sign b{color:var(--fg);font-weight:600}
+
+/* ---- controls ---- */
+#controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:center}
+.group{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;padding:6px}
+button{font-family:var(--font-ui);font-size:14px;color:var(--fg);background:transparent;border:0;
+  border-radius:8px;padding:9px 13px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;
+  transition:background .15s,color .15s}
+button:hover{background:rgba(255,255,255,.06)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#play{background:var(--accent-deep);color:#eafcff;font-weight:600;min-width:104px;justify-content:center}
+#play:hover{background:var(--accent)}
+.lang button{padding:9px 16px;font-weight:600;color:var(--muted)}
+.lang button.on{background:var(--accent-soft);color:var(--accent)}
+#sound.on{color:var(--accent)}
+.hint{color:var(--faint);font-size:12.5px;text-align:center;max-width:640px;line-height:1.6;font-family:var(--font-ui)}
+.hint kbd{font-family:var(--font-ui);background:var(--panel);border:1px solid var(--line);border-bottom-width:2px;
+  border-radius:5px;padding:1px 6px;font-size:11px;color:var(--muted)}
+svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+</style>
+
+<div id="player">
+  <div id="stagewrap">
+    <div id="stage" class="lang-ko">
+      <div id="bar"></div>
+      <div id="brand"><span class="dot"></span><span><b>JEARC</b> · East Asian Religions &amp; Cultures</span></div>
+      <div id="counter"></div>
+      <!-- scenes injected here -->
+    </div>
+  </div>
+
+  <div id="controls">
+    <div class="group lang" role="group" aria-label="language">
+      <button id="ko" class="on" type="button">한국어</button>
+      <button id="zh" type="button">中文</button>
+    </div>
+    <div class="group">
+      <button id="prev" type="button" aria-label="이전"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <button id="play" type="button"><svg id="playicon" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z" fill="currentColor" stroke="none"/></svg><span id="playlabel">재생</span></button>
+      <button id="next" type="button" aria-label="다음"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+      <button id="restart" type="button" aria-label="처음부터"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v4h4"/></svg></button>
+    </div>
+    <div class="group">
+      <button id="sound" type="button" aria-pressed="true"><svg id="soundicon" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 8.5a4 4 0 0 1 0 7M18.5 6a7 7 0 0 1 0 12"/></svg><span id="soundlabel">음성 켜짐</span></button>
+      <button id="full" type="button"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span>전체화면</span></button>
+    </div>
+  </div>
+  <p class="hint"><b>음성 내레이션</b> 포함 — <b>재생</b>을 누르면 장면마다 음성으로 읽어줍니다(브라우저 음성 사용). <b>전체화면</b>으로 두고 화면 녹화(시스템 소리 포함)하면 그대로 유튜브 영상이 됩니다 · <kbd>Space</kbd> 재생/정지 · <kbd>←</kbd> <kbd>→</kbd> 이동 · <kbd>L</kbd> 언어 전환 · <kbd>M</kbd> 음소거 · <kbd>F</kbd> 전체화면</p>
+</div>
+
+<script>
+/* ===========================================================================
+   아래 DATA 블록(UI · PAPERS · EDITOR · title/overview/closing 카피)만 교체한다.
+   NARRATION / RENDER / PLAYER 엔진은 그대로 둔다.  각 논문: n, tag{ko,zh}, en,
+   who{ko,zh}, lat(로마자), aff(소속·없으면 ""), t{ko,zh}(제목), s{ko,zh}(핵심 논지).
+   · 음성: 기본 브라우저 TTS. 클로바 mp3를 쓰려면 scripts/clova_voice.py로
+     window.__ZH_AUDIO / __KO_AUDIO = {장면index:"data:audio/mp3;..."} 를 메인 스크립트 앞에 인라인 주입.
+   · 샷 모드: URL 해시 #shot{n} → 해당 장면을 애니메이션 없이 1920×1080 풀블리드로 정적 렌더(프레임 캡처용).
+   · 시작언어: window.__START_LANG="ko"|"zh" 또는 해시 #ko/#zh.
+   아래는 JEARC Vol 3.2 예시 데이터(참고용).
+   =========================================================================== */
+/* ======================= DATA ======================= */
+const UI = {
+  ko:{play:"재생",pause:"정지",full:"전체화면",prev:"이전",next:"다음",son:"음성 켜짐",soff:"음소거"},
+  zh:{play:"播放",pause:"暂停",full:"全屏",prev:"上一张",next:"下一张",son:"語音開",soff:"靜音"}
+};
+const PAPERS = [
+ {n:1, tag:{ko:"불교 · 선종",zh:"佛教 · 禪宗"},
+  en:"On the Doctrine of Preaching through Words in The Vimalakirti Sutra",
+  who:{ko:"고문서",zh:"高文緒"}, lat:"GAO Wenxu", aff:"Beijing Language and Culture University",
+  t:{ko:"《유마힐경》 문자설법론", zh:"《維摩詰經》文字說法論"},
+  s:{ko:"‘불이(不二)’와 ‘해탈’을 궁극 종지로 삼아, 직접적 언설과 함축적 묵시라는 두 표현 경로를 아우른다. 문자를 초월하되 문자를 떠나지 않는 변증적 차원에서 경전의 교화 논리를 밝히고, 후대 선종의 종풍과 고전 시가 미학에 끼친 영향을 짚는다.",
+     zh:"錨定經典核心義理，剖析本經以「不二」「解脫」為終極宗旨，融合直陳言說與含蓄默示兩種表達路徑；在超越文字桎梏又不脫離文字載體的辯證維度中闡釋教化邏輯，並梳理其對後世禪宗宗風與古典詩歌審美的深遠影響。"}},
+ {n:2, tag:{ko:"민간신앙 · 부란(扶鸞)",zh:"民間信仰 · 扶鸞"},
+  en:"Spirit-Writing Movement in a Turbulent Social Context: A Case Study on the Đàn Tiên Cái Khế in Cần Thơ City, Vietnam",
+  who:{ko:"응우옌 타인퐁",zh:"阮清風"}, lat:"NGUYEN Thanh Phong", aff:"Vietnam National University, Ho Chi Minh City",
+  t:{ko:"격동의 사회 속 부란(扶鸞) 운동 — 베트남 껀터시 개계선단(蓋契仙壇)을 중심으로", zh:"動蕩社會背景下的扶鸞運動——以越南芹苴市蓋契仙壇為探討核心"},
+  s:{ko:"베트남 껀터의 개계선단을 전형적 사례로, 사회 혼란기에 부란 강필 신앙이 일어난 동인을 조명한다. 이 민간신앙이 신도들의 정신적 위안과 사회관계 조정에서 맡은 심리적·사회적 기능을 분석한다.",
+     zh:"選取越南芹苴蓋契仙壇作為典型個案，聚焦社會動蕩下扶鸞乩示信仰的興起動因，剖析這一民間信仰在信眾精神慰藉、社會關係調和層面承擔的心靈功用與社會職能。"}},
+ {n:3, tag:{ko:"도교 · 미학",zh:"道教 · 美學"},
+  en:"Ge Hong’s Aesthetic Thought on Immortality",
+  who:{ko:"원쓰",zh:"溫司"}, lat:"WEN Si", aff:"Sichuan Normal University",
+  t:{ko:"갈홍(葛洪)의 신선 미학 사상", zh:"葛洪的神仙美學思想"},
+  s:{ko:"현리·선도·장생 관념을 상호 대조하여, 갈홍이 ‘질박(質樸)’과 ‘본진(本真)’이라는 미학적 핵심을 실천·검증 가능한 수신 연양 체계로 구체화했음을 밝힌다. 명산대천이 천인감응·인신상합 사상에서 지닌 상징적 함의도 해명한다.",
+     zh:"以玄理、仙道、長生觀念相互參照互證，釐清葛洪將「質樸」「本真」這類抽象美學內核落地為可踐行、可核驗的修身煉養體系，並闡釋名山大川在天人感應、人神相合思想裡的象徵內涵與文化功用。"}},
+ {n:4, tag:{ko:"요족 · 구전경전",zh:"瑤族 · 口傳經典"},
+  en:"Cross-Border Transmission and Structural Transformation of the Panwang Dage: Centered on the Youmian Yao of Vietnam",
+  who:{ko:"황티투흐엉",zh:"黃氏秋紅"}, lat:"Hoàng Thị Thu Hường", aff:"Vietnam Academy of Social Sciences",
+  t:{ko:"《반왕대가(盤王大歌)》의 월경(越境) 전승과 구조 변용 — 베트남 유면요(優勉瑤)를 중심으로", zh:"《盤王大歌》的跨境流傳與結構變容——以越南優勉瑤為中心"},
+  s:{ko:"베트남 북부 유면요족 현지 조사 1차 자료를 토대로, 이 살아 있는 구전 경전이 월경 이주 속에서도 창세 신화와 조상 소급의 핵심 서사를 지켜내는 한편, 지역 환경에 맞춰 텍스트 구조를 토착화해 온 과정을 추적한다.",
+     zh:"依托越南北部優勉瑤族田野一手資料，考察這部活態口傳經典在跨境遷徙中始終穩固創世神話、先祖溯源的核心敘事，同時為適配地域環境不斷完成文本結構本土化調適的完整過程。"}},
+ {n:5, tag:{ko:"불교 · 선학",zh:"佛教 · 禪學"},
+  en:"A Comparative Study of the Meditative Thought in the Dharmatrāta Dhyāna Sūtra and the Sutra on the Concentration of Sitting Meditation",
+  who:{ko:"김명준",zh:"金明俊"}, lat:"JIN Mingjun", aff:"Sichuan University",
+  t:{ko:"《달마다라선경》과 《좌선삼매경》 선학 사상 비교 연구", zh:"《達摩多羅禪經》與《坐禪三昧經》禪學思想之比較研究"},
+  s:{ko:"두 선 경전의 ‘오문선(五門禪)’ 수행 체계를 비교하여, 염불관의 수용이 어떻게 원시 소승 선법을 대승 사상과 융합시켜 한지(漢地) 불교의 대승 중심 기조에 적응하게 했는지를 밝힌다.",
+     zh:"比對兩部禪籍「五門禪」修行體系的異同，闡明念佛觀的融入如何推動原始小乘禪法兼容大乘思想，適配漢地佛教以大乘思想為主流的思想底色。"}},
+ {n:6, tag:{ko:"종교철학 · 과학",zh:"宗教哲學 · 科學"},
+  en:"From “Being Born from Nothing” in Religion, Philosophy, and Science to the Leap of Monistic Duality",
+  who:{ko:"자오성난 · 궈하이룽",zh:"趙勝男 · 郭海龍"}, lat:"ZHAO Shengnan & GUO Hailong", aff:"Guangxi Univ. · Central Institute of Party History",
+  t:{ko:"종교·철학·과학의 ‘유생어무(有生於無)’에서 일원이상성(一元二象性)으로의 비약", zh:"從宗教、哲學與科學「有生於無」到一元二象性的飛躍"},
+  s:{ko:"종교학·전통철학·현대물리학의 경계를 가로질러 ‘무에서 유가 생한다’를 근원으로 삼고, 이를 ‘일원이상성(一元二象性)’이라는 핵심 이론으로 승화한다. 여러 종교 현상에 대한 이성적·긍정적 해석 시각을 세운다.",
+     zh:"打通宗教學、傳統哲學與現代物理學的理論邊界，以「有生於無」作為本源根基，提煉升維出「一元二象性」核心理論，為各類宗教現象構建理性、正向的闡釋視角。"}},
+ {n:7, tag:{ko:"대순사상 · 불교의례",zh:"大巡思想 · 佛教儀式"},
+  en:"Cosmic Order and Social Cohesion: A Cross-Religious Interpretation of Chinese Mahāyāna Buddhist Death-Deliverance Rituals through Daesoon Thought",
+  who:{ko:"김위",zh:"金煒"}, lat:"JIN Wei", aff:"Hankuk University of Foreign Studies",
+  t:{ko:"천지 질서와 사회 응집 — 대순사상과 서구 철리로 읽는 한지(漢地) 불교 도망(度亡) 의례", zh:"天地秩序與社會凝聚：大巡思想與西方哲理下的漢地佛教度亡儀式的跨宗教闡釋"},
+  s:{ko:"대순진리의 해원상생(解冤相生) 주장을 끌어들이고 뒤르켐·하이데거 등 서구 이론과 결합해, 한지 불교의 천도(薦度) 의례가 천지자연의 질서를 재현하는 동시에 공동체의 유대를 응집하는 이중적 본질을 지님을 해석한다.",
+     zh:"引入大巡真理思想中解冤相生的核心主張，結合涂爾幹、海德格爾等西方社會學與存在主義哲學理論，解讀漢地佛教超度亡儀兼具復刻天地自然秩序、凝聚社群紐帶的雙重本質。"}},
+ {n:8, tag:{ko:"도교 · 정일파(正一派)",zh:"道教 · 正一派"},
+  en:"Revering the Dao and Cultivating Perfection: A Study Centered on Orthodox Unity Daoists in Northern Taiwan",
+  who:{ko:"린전위안",zh:"林振源"}, lat:"LIN Chen-Yuan", aff:"National Chengchi University",
+  t:{ko:"봉도(奉道)와 수진(修真) — 현대 타이완 북부 정일파(正一派) 도사를 중심으로", zh:"奉道與修真：以當代臺灣北部正一派道士為中心的考察"},
+  s:{ko:"‘봉도’와 ‘수진’ 개념의 역사적 변천을 정리하고, 타이완 북부 정일파 도사 현지조사를 결합한다. 세속에 몸담은 채 수련을 병행하는 도문(道門) 인사의 균형 방식과, 성스러운 종교적 정체성을 유지하는 내적 기제를 분석한다.",
+     zh:"梳理「奉道」與「修真」概念內涵的歷史流變，結合臺灣北部正一派道士實地田野調研，剖析道門人士身處俗世兼顧修行煉養的平衡模式，以及維繫自身神聖宗教身份的內在機制。"}},
+ {n:9, tag:{ko:"보권 · 판본학",zh:"寶卷 · 版本學"},
+  en:"A Preliminary Study of the Version of The Precious Scroll of Blood Lake",
+  who:{ko:"후린",zh:"胡琳"}, lat:"HU Lin", aff:"Sichuan University",
+  t:{ko:"《혈호보권(血湖寶卷)》 판본 초탐", zh:"《血湖寶卷》版本初探"},
+  s:{ko:"장쑤 징장·창수·우시 지역에서 수집한 10종의 보권 텍스트를 대조하여, 이 지역에 서로 다른 제사 의례에 맞춰진, 체재가 제각기 다른 《혈호보권》 판본이 최소 다섯 계통 전하고 있음을 고증한다.",
+     zh:"比對江蘇靖江、常熟、無錫地區搜集到的十種寶卷文本，考證得出該地域至少存世五種適配不同祭祀儀軌、文本體例各有側重的《血湖寶卷》版本譜系。"}},
+ {n:10, tag:{ko:"도교 · 신선학",zh:"道教 · 神仙學"},
+  en:"The Rational Foundation and Transcendence of Immortal Belief in Baopuzi: Inner Chapters",
+  who:{ko:"양판",zh:"楊凡"}, lat:"YANG Fan", aff:"The University of Tokyo",
+  t:{ko:"《포박자·내편》 신선 신앙의 이성적 기초와 그 초월", zh:"《抱朴子·內篇》神仙信仰的理性基礎及其超越"},
+  s:{ko:"역병이 잦고 무술(巫術)이 범람하던 위진(魏晉) 시대를 배경으로, 갈홍이 의약·금단·방술의 실행·검증 가능성에 기대어 신선 신앙에 경험적 이성의 토대를 놓고, 동시에 순수 실증을 넘어서는 초월적 정신 차원을 부여했음을 논한다.",
+     zh:"立足魏晉疫病頻發、民間巫術泛濫的時代背景，論述葛洪依託醫藥方劑、金丹煉製、方術技藝可操作、可驗證的特質，為神仙信仰搭建經驗理性根基，同時突破純粹實證邏輯，賦予信仰超越性精神維度。"}},
+ {n:11, tag:{ko:"민간신앙 · 중국화",zh:"民間信仰 · 中國化"},
+  en:"Pluralistic Integration: The Sinification Path of Benzhu Belief in the Erhai Lake Basin",
+  who:{ko:"왕위쉬안 · 리하이린",zh:"王俞萱 · 李海林"}, lat:"WANG Yuxuan & LI Hailin", aff:"Southwest Minzu University",
+  t:{ko:"다원 융합 — 얼하이(洱海) 유역 본주(本主) 신앙의 중국화 경로 연구", zh:"多元交融：洱海壩區本主信仰的中國化路徑研究"},
+  s:{ko:"남조·대리 시기 토주(土主) 신앙의 태동, 명청대의 체계 재구축, 근현대 다민족 공동 숭배로 이어지는 흐름을 따라 얼하이 본주 신앙의 변천을 정리한다. 서남 변경의 민간신앙이 중화민족 다원일체 구도로 융합되는 역사적 맥락을 구체적으로 보여준다.",
+     zh:"沿著南詔大理時期土主信仰萌芽、明清時期體系重構、近現代多民族共同信奉的發展脈絡，梳理洱海本主信仰的演化歷程，具象呈現西南邊疆民間信仰融入中華民族多元一體格局的歷史脈絡。"}},
+ {n:12, tag:{ko:"불교사 · 도교사",zh:"佛教史 · 道教史"},
+  en:"The Background of the Suppression of Taoism and Buddhism by the Devout Emperor Wu of the Northern Zhou Dynasty",
+  who:{ko:"최진열",zh:"崔珍烈"}, lat:"CHOI Jinyeol", aff:"",
+  t:{ko:"북주 무제의 불교·도교 숭신과 종교 탄압의 배경", zh:"北周武帝的崇信佛教和道教與其壓迫宗教的背景"},
+  s:{ko:"효릉 출토 불교 조상(造像)과 사료 속 중독 사실 등 여러 증거를 결합해, 북주 무제가 본래 불·도를 숭상했음을 고증한다. 폐불억도(廢佛抑道) 정책의 핵심 동인은 북제 정벌의 군비 조달이었으며, 본질은 재정·군사상의 현실적 고려였음을 밝힌다.",
+     zh:"結合孝陵出土佛教造像、相關史料中毒害史實等多重證據，考證北周武帝本有崇奉佛道之心；其推行廢佛抑道政策，核心動因在於籌措征伐北齊的軍費開支，本質是財政軍事層面的現實考量。"}},
+ {n:13, tag:{ko:"불교 · 선종",zh:"佛教 · 禪宗"},
+  en:"A Preliminary Study on the Life and Chan Dharma of Chan Master Yanju Deshen of the Shuanggui Dharma Lineage",
+  who:{ko:"뤄웨이",zh:"羅威"}, lat:"LUO Wei", aff:"Sun Yat-sen University",
+  t:{ko:"쌍계법계(雙桂法系) 연거덕신(燕居德申) 선사의 행력과 선법 초탐", zh:"雙桂法系燕居德申禪師行曆與禪法初探"},
+  s:{ko:"파산해명(破山海明)의 점화로 깨달은 뒤 곳곳에서 법을 편 연거덕신 선사의 생애를 정리하고, ‘가는 곳마다 주인이 되고 인연을 만나면 곧 종지로 삼는다(隨處做主, 遇緣即宗)’는 핵심 선지(禪旨)와 학인을 이끄는 기봉(機鋒)의 교법을 분석한다.",
+     zh:"梳理燕居德申禪師受破山海明禪師點化開悟、四處弘法傳禪的生平履歷，提煉其「隨處做主，遇緣即宗」的核心禪學宗旨，解析其接引學人、機鋒開示的禪門教法。"}},
+ {n:14, tag:{ko:"불교 · 유불교섭",zh:"佛教 · 儒佛交涉"},
+  en:"A Comprehensive Assessment of Zhixu’s Views on Confucian Figures",
+  who:{ko:"왕쥔쥔",zh:"王俊鈞"}, lat:"WANG Chun Chun", aff:"Komazawa University",
+  t:{ko:"지욱(智旭)의 유자(儒者) 종합 평술", zh:"智旭之儒者綜合評述"},
+  s:{ko:"우익(蕅益) 지욱의 현존 저작 전체를 통독·집성하여 역대 유가 인물에 대한 그의 평가 틀을 세운다. 지욱이 공자를 보살의 시현(示現)으로 보고, 공안(孔顔)의 심법에 기대어 불·유 융합 체계를 구축한 핵심 사유를 밝힌다.",
+     zh:"通讀匯總蕅益智旭全部傳世著作，搭建其對歷代儒家人物的評判框架，闡明智旭以孔子為菩薩示現、依託孔顏心法搭建佛儒思想交融體系的核心思路。"}},
+ {n:15, tag:{ko:"무속 · 도상",zh:"薩滿 · 圖像"},
+  en:"An Exploration of Guan Yu’s Image in the Shamanic God Paintings of Korea",
+  who:{ko:"왕후이신 · 리성",zh:"王惠欣 · 黎晟"}, lat:"WANG Huixin & LI Sheng", aff:"Qingdao University",
+  t:{ko:"조선 무속 무신도(巫神圖) 속 관우(關羽) 형상 탐구", zh:"朝鮮薩滿教巫神圖中的關羽形象探究"},
+  s:{ko:"관우 신앙이 한반도에 전래된 뒤 냉대받던 데서 성행하고 끝내 무속 무신 체계에 ‘장군신(將軍神)’으로 편입되는 전 과정을 정리한다. 신상 도상의 개작과 재창조를 통해 유가 가치에 대한 조선 사회의 토착적 변용과 창조적 전환의 문화 논리를 읽어낸다.",
+     zh:"梳理關羽信仰傳入朝鮮半島後從遭冷遇到走向盛行、最終被納入薩滿巫神體系尊為將軍神的完整脈絡；透過神像圖像的改編與再造，解讀朝鮮本土社會對儒家價值進行本土化改造與創造性轉化的文化邏輯。"}},
+ {n:16, tag:{ko:"의학사상 · 도유(道儒)",zh:"醫學思想 · 道儒"},
+  en:"An Academic Study of Sino-Vietnamese Medical Thought: A Case Study on the Medical Thought of Ge Hong and Lê Hữu Trác",
+  who:{ko:"응우옌 프억따이 · 응우옌 투언꾸이",zh:"阮福才 · 阮順貴"}, lat:"NGUYEN Phuoc Tai & NGUYEN Thuan Quy", aff:"Can Tho Univ. of Medicine · Dong Thap University",
+  t:{ko:"중국·베트남 의학 사상의 학술 연구 — 갈홍과 레 흐우 짝(黎有卓)을 사례로", zh:"中越醫學思想的學術研究——以葛洪與黎有卓醫學思想為例"},
+  s:{ko:"도교를 이론적 기반으로 삼은 갈홍의 의학 체계와 유가 윤리를 핵심으로 하는 레 흐우 짝의 의가(醫家) 사상을 각각 대조하여, 두 사람의 의덕(醫德)과 임상 진료에 공통된 인문적 바탕과 실용적 의학 사유를 발굴한다.",
+     zh:"分別對比以道教思想為理論根基的葛洪醫學體系、以儒家倫理為核心的黎有卓醫家思想，發掘二者在行醫醫德、臨床診療之中共通的人文底色與務實的醫學思維。"}},
+ {n:17, tag:{ko:"요전도교 · 판본",zh:"瑤傳道教 · 版本"},
+  en:"The Localization of an Expanded Scripture Edition: Editions, Ritual Functions, and the Differentiation of Yao-Transmitted Daoism",
+  who:{ko:"궈정이",zh:"郭正宜"}, lat:"KUO Cheng I", aff:"Shaoguan University",
+  t:{ko:"한 권짜리 증자본(增字本)의 토착화 — 차산요(茶山瑤) 《도인경》의 판본 구성·의례 기능과 요전(瑤傳) 도교의 분화", zh:"一卷增字本的在地化：茶山瑤《度人經》的版本構成、儀式功能與瑤傳道教分殊"},
+  s:{ko:"문헌 교감과 현지 답사를 결합해 차산요 필사본 《도인경》의 명칭 규칙·편목 편제·의례 사용 층위를 규명한다. 요족에 전승된 도교 내부의 동원이류(同源異流)·이일분수(理一分殊)의 분화 양상을 드러낸다.",
+     zh:"依靠文本校勘與田野走訪相結合的方式，釐清茶山瑤手抄本《度人經》的定名規則、篇目編排特點與儀軌使用層級，展現瑤傳道教體系內部同源異流、理一分殊的分化樣貌。"}}
+];
+const EDITOR = {who:{ko:"이홍군(李紅軍)",zh:"李紅軍"}, role:{ko:"《동아시아 종교문화 연구》 주간",zh:"《東亞宗教文化研究》主編"}, date:"2026 · 06 · 30"};
+
+/* scene list: title, overview, 17 papers, closing */
+const SCENES = [{type:"title"},{type:"overview"}, ...PAPERS.map(p=>({type:"paper",p})), {type:"closing"}];
+const DUR = {title:6500, overview:8500, paper:9000, closing:9500};
+
+/* ======================= RENDER ======================= */
+const stage=document.getElementById("stage");
+const barEl=document.getElementById("bar");
+const counterEl=document.getElementById("counter");
+let lang="ko";
+
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;")}
+function pad(n){return String(n).padStart(2,"0")}
+
+function sceneHTML(sc){
+  if(sc.type==="title"){
+    return `<div class="center">
+      <div class="kicker rise" style="--d:.1s">Daesoon Academy of Sciences</div>
+      <h1 class="big rise" style="--d:.3s">East Asian Religions<br>&amp; Cultures</h1>
+      <div class="sub-cjk rise" style="--d:.6s">${lang==="ko"?"동아시아 종교문화 연구":"東亞宗教文化研究"}</div>
+      <div class="vol rise" style="--d:.9s">Volume <b>3</b> · Issue <b>2</b> &nbsp;—&nbsp; June 2026</div>
+      <div class="pub rise" style="--d:1.15s">${lang==="ko"?"대진대학교 대순사상학술원 발간 · 중국어 국제학술지":"大眞大學校 大巡思想學術院 出版 · 中文國際學術期刊"}</div>
+    </div>`;
+  }
+  if(sc.type==="overview"){
+    const lead = lang==="ko"
+      ? "동아시아 종교문화 연구는 철학·역사학·사회학·인류학이 교차하는 거대한 주제다. 이번 호는 <b style='color:var(--gold)'>17편</b>의 학술논문을 통해 ‘문명을 가로지르고, 텍스트를 가로지르며, 학문을 가로지르는’ 연구 색채를 담았다."
+      : "東亞宗教文化研究是涉及哲學、歷史學、社會學、人類學等多學科交叉的宏大課題。本期以 <b style='color:var(--gold)'>17 篇</b> 學術論文，呈現「跨文明、跨文本、跨學科」的研究色彩。";
+    return `<div class="center">
+      <div class="kicker rise" style="--d:.1s">${lang==="ko"?"이번 호":"本期"}</div>
+      <div class="count-hero rise" style="--d:.3s">17</div>
+      <div class="count-label rise" style="--d:.5s">${lang==="ko"?"편의 학술논문 · Research Articles":"篇 學術論文 · Research Articles"}</div>
+      <div class="rule rise" style="--d:.7s;align-self:center"></div>
+      <p class="lead rise" style="--d:.9s">${lead}</p>
+    </div>`;
+  }
+  if(sc.type==="closing"){
+    return `<div class="center">
+      <div class="kicker rise" style="--d:.1s">Thank you for reading</div>
+      <h2 class="big rise" style="--d:.3s">JEARC <span class="amp">3·2</span></h2>
+      <div class="sub-cjk rise" style="--d:.55s">${lang==="ko"?"전 17편 · 중·한·영 온라인 공개":"全 17 篇 · 中・韓・英 線上公開"}</div>
+      <div class="sign rise" style="--d:.85s"><b>${EDITOR.who[lang]}</b><br>${EDITOR.role[lang]} · ${EDITOR.date}</div>
+      <div class="pub rise" style="--d:1.1s">${lang==="ko"?"대진대학교 대순사상학술원":"大眞大學校 大巡思想學術院"}</div>
+    </div>`;
+  }
+  // paper
+  const p=sc.p;
+  const aff = p.aff ? `<span class="aff">${esc(p.aff)}</span>` : "";
+  return `<div class="seal rise" style="--d:.15s">${pad(p.n)}</div>
+    <div class="eyebrow rise" style="--d:.1s"><span class="num">${pad(p.n)}</span><span class="bar"></span>${esc(p.tag[lang])}</div>
+    <div class="en-title rise" style="--d:.28s">${esc(p.en)}</div>
+    <h2 class="title rise" style="--d:.42s">${esc(p.t[lang])}</h2>
+    <div class="rule draw" style="--d:.7s"></div>
+    <p class="thesis rise" style="--d:.85s">${p.s[lang]}</p>
+    <div class="byline rise" style="--d:1.05s"><span class="who">${esc(p.who[lang])}</span><span class="lat">${esc(p.lat)}</span>${aff}</div>`;
+}
+
+/* ======================= NARRATION (Web Speech TTS) ======================= */
+const synth = window.speechSynthesis || null;
+let soundOn = true, voices = [];
+function loadVoices(){ try{ voices = synth ? synth.getVoices() : []; }catch(e){ voices=[]; } }
+if(synth){ loadVoices(); synth.onvoiceschanged = loadVoices; }
+function pickVoice(l){
+  const want = l==="zh" ? ["zh-cn","zh-sg","zh-hk","zh-tw","zh"] : ["ko-kr","ko"];
+  for(const w of want){ const v=voices.find(v=>(v.lang||"").toLowerCase().replace("_","-").startsWith(w)); if(v) return v; }
+  return null;
+}
+/* 내레이션 텍스트: 괄호 속 한자·책이름 괄호를 정리해 자연스럽게 읽히게 한다 */
+function clean(t){
+  return (t||"").replace(/《|》|〈|〉|「|」|『|』/g,"")
+    .replace(/\s*[—–-]\s*/g," , ")
+    .replace(/\(([㐀-鿿]+)\)/g,"")   // 한글 뒤 한자병기 제거
+    .replace(/（[㐀-鿿]+）/g,"")
+    .replace(/\s{2,}/g," ").trim();
+}
+function narrText(sc,l){
+  if(sc.type==="title")   return l==="ko" ? "동아시아 종교문화 연구. 제 3권 2호. 2026년 6월. 대진대학교 대순사상학술원 발간."
+                                          : "東亞宗教文化研究。第三卷 第二期。二〇二六年六月。大眞大學 大巡思想學術院 出版。";
+  if(sc.type==="overview")return l==="ko" ? "이번 호에는 열일곱 편의 학술논문을 수록하여, 문명과 텍스트와 학문을 가로지르는 연구 색채를 담았습니다."
+                                          : "本期收錄十七篇學術論文，呈現跨文明、跨文本、跨學科的研究色彩。";
+  if(sc.type==="closing") return l==="ko" ? "전 열일곱 편. 중국어 한국어 영어로 온라인 공개됩니다. 주간 이홍군. 2026년 6월 30일."
+                                          : "全十七篇，以中文、韓文、英文線上公開。主編 李紅軍。二〇二六年六月三十日。";
+  const p=sc.p;
+  const nth = l==="ko" ? `${p.n}번. ` : `第${p.n}篇。`;
+  return clean(nth + p.t[l] + ". " + p.s[l]);
+}
+/* 사전 생성 오디오(클로바 등). window.__ZH_AUDIO = {장면index: "data:audio/mp3;base64,..."} */
+const audioEl = new Audio(); audioEl.preload="auto";
+function stopAudio(){ try{ audioEl.pause(); }catch(e){} }
+function clipFor(){ const m = lang==="zh" ? window.__ZH_AUDIO : (lang==="ko" ? window.__KO_AUDIO : null); return (m && m[idx]) ? m[idx] : null; }
+
+function speakScene(onDone){
+  if(!soundOn){ return false; }
+  const clip = clipFor();
+  if(clip){                                   // ① 사전 생성 오디오(클로바 중국어) 우선
+    try{ synth&&synth.cancel(); }catch(e){}
+    audioEl.src = clip; try{ audioEl.currentTime = 0; }catch(e){}
+    audioEl.onloadedmetadata = ()=>{ if(audioEl.duration && isFinite(audioEl.duration)) curDur = audioEl.duration*1000 + 600; };
+    audioEl.onended = ()=>{ if(onDone) onDone(); };
+    const p = audioEl.play();
+    if(p && p.catch) p.catch(()=>{});          // 자동재생 차단 시 tick 타이머가 진행
+    return true;
+  }
+  if(!synth){ return false; }                  // ② 브라우저 TTS
+  try{ synth.cancel(); }catch(e){}
+  const txt = narrText(SCENES[idx], lang);
+  if(!txt){ return false; }
+  const u = new SpeechSynthesisUtterance(txt);
+  const v = pickVoice(lang); if(v) u.voice=v;
+  u.lang = lang==="zh" ? (v&&v.lang||"zh-CN") : (v&&v.lang||"ko-KR");
+  u.rate = 0.98; u.pitch = 1.0;
+  u.onend = ()=>{ if(onDone) onDone(); };
+  u.onerror = ()=>{ if(onDone) onDone(); };
+  try{ synth.speak(u); return true; }catch(e){ return false; }
+}
+function estimate(l){ const t=narrText(SCENES[idx],l)||""; return Math.max(4200, Math.min(17000, t.length*185 + 1400)); }
+
+/* ======================= PLAYER ======================= */
+let idx=0, playing=false, elapsed=0, lastTs=0, raf=0, curDur=9000, advanced=false;
+const nodes=[];
+SCENES.forEach(sc=>{const d=document.createElement("section");d.className="scene";nodes.push(d);stage.appendChild(d);});
+
+function baseDur(i){return DUR[SCENES[i].type]||9000}
+
+function render(i,{resume=false}={}){
+  idx=(i+SCENES.length)%SCENES.length;
+  nodes.forEach(n=>{n.classList.remove("active","run")});
+  const n=nodes[idx];
+  n.innerHTML=sceneHTML(SCENES[idx]);
+  n.classList.add("active");
+  counterEl.innerHTML=`<b>${pad(idx+1)}</b> / ${pad(SCENES.length)}`;
+  void n.offsetWidth; n.classList.add("run");
+  if(!resume){elapsed=0; barEl.style.width="0%";}
+  lastTs=performance.now();
+}
+/* show = 화면 전환 + (재생 중이면) 내레이션 시작 */
+function show(i,opts){
+  render(i,opts);
+  advanced=false;
+  const useVoice = synth && soundOn && playing;
+  curDur = useVoice ? estimate(lang) : baseDur(idx);
+  if(playing){
+    if(useVoice){ speakScene(()=>{ if(!advanced){ advanced=true; nextOrStop(); } }); }
+  }
+}
+function nextOrStop(){
+  if(idx===SCENES.length-1){ setPlay(false); }
+  else { show(idx+1); }
+}
+function tick(ts){
+  if(!playing){return;}
+  const dt=ts-lastTs; lastTs=ts; elapsed+=dt;
+  barEl.style.width=Math.min(100,elapsed/curDur*100)+"%";
+  const useVoice = synth && soundOn;
+  const deadline = useVoice ? curDur+3500 : curDur;   // 음성이면 onend가 우선, 아니면 타이머
+  if(!advanced && elapsed>=deadline){ advanced=true; nextOrStop(); }
+  raf=requestAnimationFrame(tick);
+}
+function setPlay(on){
+  playing=on;
+  document.getElementById("playlabel").textContent= on?UI[lang].pause:UI[lang].play;
+  document.getElementById("playicon").innerHTML= on
+    ? '<path d="M8 5v14M16 5v14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'
+    : '<path d="M7 5l12 7-12 7z" fill="currentColor" stroke="none"/>';
+  if(on){
+    // 현재 장면부터 (내레이션 포함) 시작
+    advanced=false;
+    const useVoice = synth && soundOn;
+    curDur = useVoice ? estimate(lang) : baseDur(idx);
+    if(useVoice){ speakScene(()=>{ if(!advanced){ advanced=true; nextOrStop(); } }); }
+    lastTs=performance.now(); cancelAnimationFrame(raf); raf=requestAnimationFrame(tick);
+  } else {
+    cancelAnimationFrame(raf);
+    stopAudio(); if(synth){ try{ synth.cancel(); }catch(e){} }
+  }
+}
+function go(delta){ const wasPlaying=playing; show(idx+delta); if(!wasPlaying){ stopAudio(); if(synth){try{synth.cancel();}catch(e){}} } }
+
+function setSound(on){
+  soundOn=on;
+  const b=document.getElementById("sound");
+  b.setAttribute("aria-pressed", on?"true":"false");
+  b.classList.toggle("on", on);
+  document.getElementById("soundlabel").textContent = on?UI[lang].son:UI[lang].soff;
+  document.getElementById("soundicon").innerHTML = on
+    ? '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 8.5a4 4 0 0 1 0 7M18.5 6a7 7 0 0 1 0 12"/>'
+    : '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/>';
+  if(!on){ stopAudio(); if(synth){ try{ synth.cancel(); }catch(e){} } }
+  else if(on && playing){ // 켜면 현재 장면부터 다시 읽기
+    advanced=false; curDur=estimate(lang); elapsed=0; barEl.style.width="0%";
+    speakScene(()=>{ if(!advanced){ advanced=true; nextOrStop(); } }); lastTs=performance.now();
+  }
+}
+
+function setLang(l){
+  lang=l;
+  stage.classList.toggle("lang-zh", l==="zh");
+  stage.classList.toggle("lang-ko", l==="ko");
+  stage.style.setProperty("--font-cjk", l==="zh"?"var(--font-zh)":"var(--font-ko)");
+  document.getElementById("ko").classList.toggle("on",l==="ko");
+  document.getElementById("zh").classList.toggle("on",l==="zh");
+  document.getElementById("playlabel").textContent= playing?UI[l].pause:UI[l].play;
+  document.querySelector("#full span").textContent=UI[l].full;
+  document.getElementById("soundlabel").textContent= soundOn?UI[l].son:UI[l].soff;
+  document.getElementById("prev").setAttribute("aria-label",UI[l].prev);
+  document.getElementById("next").setAttribute("aria-label",UI[l].next);
+  stopAudio(); if(synth){ try{ synth.cancel(); }catch(e){} }
+  render(idx,{resume:true});                  // 현재 장면 텍스트만 교체(진행도 유지)
+  if(playing){                                 // 재생 중이면 새 언어로 다시 읽기
+    advanced=false; curDur = (synth&&soundOn)?estimate(l):baseDur(idx);
+    if(synth&&soundOn){ speakScene(()=>{ if(!advanced){ advanced=true; nextOrStop(); } }); }
+    lastTs=performance.now();
+  }
+}
+
+/* controls */
+document.getElementById("play").onclick=()=>setPlay(!playing);
+document.getElementById("prev").onclick=()=>{ if(!playing){show(idx-1);} else {show(idx-1);} };
+document.getElementById("next").onclick=()=>{ show(idx+1); if(!playing)setPlay(true); };
+document.getElementById("restart").onclick=()=>{ show(0); setPlay(true); };
+document.getElementById("ko").onclick=()=>setLang("ko");
+document.getElementById("zh").onclick=()=>setLang("zh");
+document.getElementById("sound").onclick=()=>setSound(!soundOn);
+const wrap=document.getElementById("stagewrap");
+document.getElementById("full").onclick=()=>{
+  if(document.fullscreenElement){document.exitFullscreen&&document.exitFullscreen();}
+  else{wrap.requestFullscreen&&wrap.requestFullscreen().catch(()=>{});}
+};
+document.addEventListener("keydown",e=>{
+  if(e.key===" "){e.preventDefault();setPlay(!playing);}
+  else if(e.key==="ArrowRight"){show(idx+1); if(!playing)setPlay(true);}
+  else if(e.key==="ArrowLeft"){show(idx-1);}
+  else if(e.key==="l"||e.key==="L"){setLang(lang==="ko"?"zh":"ko");}
+  else if(e.key==="m"||e.key==="M"){setSound(!soundOn);}
+  else if(e.key==="f"||e.key==="F"){document.getElementById("full").click();}
+});
+/* 브라우저 탭을 벗어나면 음성 중단 */
+document.addEventListener("visibilitychange",()=>{ if(document.hidden){ stopAudio(); if(synth){ try{synth.cancel();}catch(e){} } } });
+
+/* init — 시작 언어: window.__START_LANG > URL 해시(#zh/#ko) > 기본 ko */
+const _hash=(location.hash||"").replace("#","").toLowerCase();
+const START_LANG = (window.__START_LANG==="zh"||window.__START_LANG==="ko") ? window.__START_LANG
+                 : (_hash==="zh"||_hash==="ko") ? _hash : "ko";
+document.getElementById("sound").classList.add("on");
+const _shotM=(location.hash||"").match(/shot(\d+)/i);
+render(0);
+setLang(START_LANG);
+if(_shotM){ document.body.classList.add("shotmode"); stage.classList.add("shot"); render(parseInt(_shotM[1],10)); }  // 프레임 캡처용 정적 렌더
+
+</script>
